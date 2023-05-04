@@ -10,55 +10,16 @@
 
 int main(void) {
     int shared_memory_file_descriptor = shm_open(MEM_NAME, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (shared_memory_file_descriptor == -1) {
+        perror("shm_open");
+    }
     if (ftruncate(shared_memory_file_descriptor, sizeof(NUMBERS)) == -1) {
-        switch (errno) {
-            case 0:
-                break;
-            case EBADF:
-                printf("fd is not a valid open file descriptor");
-                return 1;
-            case EINVAL:
-                printf("The length argument was negative or larger than the maximum file size");
-                return 1;
-            case EFBIG:
-                printf("The length argument was larger than the current file size");
-                return 1;
-            default:
-                printf("Error truncating file");
-                return 1;
-        }
+        perror("ftuncate");
     }
 
     int(*shared_memory_value)[N_ELEMS] = mmap(NULL, sizeof(NUMBERS), PROT_READ | PROT_WRITE, MAP_SHARED, shared_memory_file_descriptor, 0);
     if (shared_memory_value == MAP_FAILED) {
-        switch (errno) {
-            case 0:
-                break;
-            case EBADF:
-                printf("fd is not a valid open file descriptor");
-                return 1;
-            case EINVAL:
-                printf("The length argument was negative or larger than the maximum file size");
-                return 1;
-            case EFBIG:
-                printf("The length argument was larger than the current file size");
-                return 1;
-            case ENOMEM:
-                printf("There was insufficient room in the address space to map the file");
-                return 1;
-            case EACCES:
-                printf("fd does not have permission to map the file");
-                return 1;
-            case EAGAIN:
-                printf("The file has been locked, or too much memory has been locked");
-                return 1;
-            case ENODEV:
-                printf("The underlying filesystem of the specified file does not support memory mapping");
-                return 1;
-            default:
-                printf("Error mapping memory");
-                return 1;
-        }
+        perror("mmap");
     }
 
     for (int i = 0; i < N_ELEMS; i++) {
@@ -79,52 +40,10 @@ int main(void) {
         sleep(1);
     }
     if (munmap(shared_memory_value, sizeof(shared_memory_value)) == -1) {
-        switch (errno) {
-            case 0:
-                break;
-            case EBADF:
-                printf("fd is not a valid open file descriptor");
-                return 1;
-            case EINVAL:
-                printf("The length argument was negative or larger than the maximum file size");
-                return 1;
-            case EFBIG:
-                printf("The length argument was larger than the current file size");
-                return 1;
-            case ENOMEM:
-                printf("There was insufficient room in the address space to map the file");
-                return 1;
-            case EACCES:
-                printf("fd does not have permission to map the file");
-                return 1;
-            case EAGAIN:
-                printf("The file has been locked, or too much memory has been locked");
-                return 1;
-            case ENODEV:
-                printf("The underlying filesystem of the specified file does not support memory mapping");
-                return 1;
-            default:
-                printf("Error unmapping memory");
-                return 1;
-        }
+        perror("munmap");
     }
     if (close(shared_memory_file_descriptor) == -1) {
-        switch (errno) {
-            case 0:
-                break;
-            case EBADF:
-                printf("fd is not a valid open file descriptor");
-                return 1;
-            case EINTR:
-                printf("close() was interrupted by a signal");
-                return 1;
-            case EIO:
-                printf("An I/O error occurred");
-                return 1;
-            default:
-                printf("Error closing file");
-                return 1;
-        }
+        perror("close");
     }
     return 0;
 }
