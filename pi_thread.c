@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
             perror("clock_gettime");
         }
         if ((cur.tv_sec + cur.tv_nsec * 1e-9) - (last.tv_sec + last.tv_nsec * 1e-9) >= 1) {
-            printf("RESULT: %.32Lf \nITERATIONS: %-16ld  (%05.2f%%) \n\n", 4 * (long double)sum / (long double)count, count, (double)count / (double)num_iterations * 100.);
+            printf("RESULT: %.16Lf \nITERATIONS: %-16ld  (%05.2f%%) \n\n", 4 * (long double)sum / (long double)count, count, (double)count / (double)num_iterations * 100.);
             if (clock_gettime(CLOCK_MONOTONIC, &last)) {
                 perror("clock_gettime");
             }
