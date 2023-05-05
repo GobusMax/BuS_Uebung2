@@ -12,21 +12,20 @@ unsigned long num_threads = 1;
 typedef struct thread_data {
     unsigned int idx;
     unsigned long res;
+    unsigned long count;
 } thread_data;
 
 void* calc_pi_helper(void* args) {
     thread_data* tdata = (thread_data*)args;
     unsigned int seed = tdata->idx;
-    unsigned long count = 0;
-
     for (unsigned long i = 0; i < num_iterations_per_thread; i++) {
         float x = (float)rand_r(&seed) / (float)(RAND_MAX);
         float y = (float)rand_r(&seed) / (float)(RAND_MAX);
         if (x * x + y * y <= 1.) {
-            count++;
+            tdata->res++;
         }
+        tdata->count++;
     }
-    tdata->res = count;
     return 0;
 }
 
@@ -35,7 +34,6 @@ int main(int argc, char** argv) {
     if (clock_gettime(CLOCK_MONOTONIC, &start)) {
         perror("clock_gettime");
     }
-
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "-n") == 0 && i < argc - 1) {
             num_iterations = atoi(argv[i + 1]);
@@ -49,9 +47,34 @@ int main(int argc, char** argv) {
     thread_data tdata[num_threads];
     for (unsigned long i = 0; i < num_threads; i++) {
         tdata[i].res = 0;
+        tdata[i].count = 0;
         tdata[i].idx = i;
         if (pthread_create(&threads[i], NULL, &calc_pi_helper, &tdata[i])) {
             perror("pthread_create");
+        }
+    }
+    unsigned long count = 0;
+    unsigned long sum = 0;
+
+    struct timespec last, cur;
+    if (clock_gettime(CLOCK_MONOTONIC, &last)) {
+        perror("clock_gettime");
+    }
+    while (count < num_iterations) {
+        count = 0;
+        sum = 0;
+        for (unsigned i = 0; i < num_threads; i++) {
+            count += tdata[i].count;
+            sum += tdata[i].res;
+        }
+        if (clock_gettime(CLOCK_MONOTONIC, &cur)) {
+            perror("clock_gettime");
+        }
+        if ((cur.tv_sec + cur.tv_nsec * 1e-9) - (last.tv_sec + last.tv_nsec * 1e-9) >= 1) {
+            printf("RESULT: %.32Lf \nITERATIONS: %-16ld  (%05.2f%%) \n\n", 4 * (long double)sum / (long double)count, count, (double)count / (double)num_iterations * 100.);
+            if (clock_gettime(CLOCK_MONOTONIC, &last)) {
+                perror("clock_gettime");
+            }
         }
     }
     for (unsigned long i = 0; i < num_threads; i++) {
@@ -59,15 +82,11 @@ int main(int argc, char** argv) {
             perror("pthread_join");
         }
     }
-    unsigned long sum = 0;
-    for (unsigned long i = 0; i < num_threads; i++) {
-        sum += tdata[i].res;
-    }
     if (clock_gettime(CLOCK_MONOTONIC, &end)) {
         perror("clock_gettime");
     }
-
-    double delta = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
-    printf("RESULT: %lf \nTIME: %f", 4 * (double)sum / (double)num_iterations, delta);
+    printf("FINAL\n");
+    printf("RESULT: %lf \nITERATIONS: %ld \n", 4 * (double)sum / (double)count, count);
+    printf("TIME: %lf\n", (end.tv_sec + end.tv_nsec * 1e-9) - (start.tv_sec + start.tv_nsec * 1e-9));
     return 0;
 }
