@@ -1,3 +1,6 @@
+
+// Run with for example: ./pi_thread -n 1000000000 -t 4
+
 #define _POSIX_C_SOURCE 200809L
 #include <unistd.h>
 #include <stdio.h>
@@ -7,7 +10,7 @@
 #include <time.h>
 #include <errno.h>
 unsigned long num_iterations_per_thread = 0;
-unsigned long num_iterations = 0;
+unsigned long num_iterations = 1000000000;
 unsigned long num_threads = 1;
 typedef struct thread_data {
     unsigned int idx;
@@ -36,10 +39,10 @@ int main(int argc, char** argv) {
     }
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "-n") == 0 && i < argc - 1) {
-            num_iterations = atoi(argv[i + 1]);
+            num_iterations = atol(argv[i + 1]);
         }
         if (strcmp(argv[i], "-t") == 0 && i < argc - 1) {
-            num_threads = atoi(argv[i + 1]);
+            num_threads = atol(argv[i + 1]);
         }
     }
     num_iterations_per_thread = num_iterations / num_threads;
@@ -86,7 +89,7 @@ int main(int argc, char** argv) {
         perror("clock_gettime");
     }
     printf("FINAL\n");
-    printf("RESULT: %lf \nITERATIONS: %ld \n", 4 * (double)sum / (double)count, count);
+    printf("RESULT: %.32lf \nITERATIONS: %ld \n", 4 * (double)sum / (double)count, count);
     printf("TIME: %lf\n", (end.tv_sec + end.tv_nsec * 1e-9) - (start.tv_sec + start.tv_nsec * 1e-9));
     return 0;
 }
